@@ -1,0 +1,31 @@
+FROM nvcr.io/nvidia/l4t-base:r36.2.0 AS builder
+
+# Set environment variables
+ENV PYTHON_DEPENDENCIES_BUILD="build-essential lcov pkg-config clang cmake \
+libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev \
+libncurses5-dev libreadline-dev libsqlite3-dev libssl-dev libgraphviz-dev \
+lzma-dev tk-dev uuid-dev libzstd-dev zlib1g-dev git libopenjp2-7-dev \
+libfreetype6-dev liblcms2-dev libwebp-dev libnetcdff-dev gfortran \
+libmpich-dev libcudss0-dev-cuda-12 libcusparselt0-dev-cuda-12 libopenblas-dev liblapack-dev"
+
+ENV PYTHON_DEPENDENCIES_RUN="build-essential lcov pkg-config cmake ninja-build \
+libbz2-1.0 libffi8 libgdbm6 libgdbm-compat4 liblzma5 libzstd1 \
+libtinfo6 libreadline8 libsqlite3-0 graphviz \
+zlib1g tk libuuid1 git libopenjp2-7-dev libopenjp2-7 liblcms2-2 libwebpmux3 libwebpdemux2 libwebp7 \
+libnetcdff7 gfortran libgomp1 libcudss0-cuda-12 libcusparselt0-cuda-12 libopenblas0 liblapack3"
+
+# Set timezone
+RUN ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+
+# Install base tools
+RUN apt-get update -y && \
+    apt-get install -y wget && \
+    apt-get install -y --no-install-recommends $PYTHON_DEPENDENCIES_BUILD $PYTHON_DEPENDENCIES_RUN && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build Python
+RUN echo '#!/bin/bash\npython_build_command() {\n  git clone --branch v3.13.9 --single-branch --depth 1 https://github.com/python/cpython.git;\n  cd cpython;\n  ./configure --enable-shared LDFLAGS="-Wl,-rpath /usr/local/lib" --enable-optimizations --with-lto;\n  make -j;\n  make install;\n  cd ..;\n  rm -rf cpython;\n  python3 -m ensurepip --upgrade;\n  pip3 install --upgrade pip;\n}\npython_build_command' > /tmp/build_python.sh && \
+    chmod +x /tmp/build_python.sh && \
+    bash /tmp/build_python.sh && \
+    rm /tmp/build_python.sh
