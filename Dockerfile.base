@@ -15,7 +15,7 @@ zlib1g tk libuuid1 git libopenjp2-7-dev libopenjp2-7 liblcms2-2 libwebpmux3 libw
 libnetcdff7 gfortran libgomp1 libcudss0-cuda-12 libcusparselt0-cuda-12 libopenblas0 liblapack3"
 
 # Set timezone
-RUN ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+RUN rm  /etc/localtime; ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
 
 # Install base tools
 RUN apt-get update -y && \
