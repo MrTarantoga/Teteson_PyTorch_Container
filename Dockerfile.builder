@@ -24,116 +24,32 @@ ENV CXX11_ABI=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    cmake \
-    build-essential \
-    python3-dev \
-    python3-pip \
-    python3-setuptools \
-    libopenblas-dev \
-    liblapack-dev \
-    libprotobuf-dev \
-    protobuf-compiler \
-    libgflags-dev \
-    libgoogle-glog-dev \
-    libsnappy-dev \
-    libbz2-dev \
-    liblzma-dev \
-    libgdbm-dev \
-    libncurses5-dev \
-    libreadline-dev \
-    libsqlite3-dev \
-    libssl-dev \
-    libffi-dev \
-    libgraphviz-dev \
-    libzstd-dev \
-    libncursesw5-dev \
-    libtinfo5 \
-    libuuid1 \
-    libopenjp2-7-dev \
-    libfreetype6-dev \
-    liblcms2-dev \
-    libwebp-dev \
-    libnetcdff-dev \
-    gfortran \
-    libmpich-dev \
-    libcudss0-dev-cuda-12 \
-    libcusparselt0-dev-cuda-12 \
-    libopenblas-dev \
-    liblapack-dev \
-    libcuda1-535 \
-    && rm -rf /var/lib/apt/lists/*
+build-essential \
+lcov pkg-config clang cmake ninja-build \
+libbz2-dev libffi-dev libgdbm-dev \
+libgdbm-compat-dev liblzma-dev \
+libncurses5-dev libreadline-dev libsqlite3-dev \
+libssl-dev libgraphviz-dev lzma-dev tk-dev uuid-dev libzstd-dev \
+zlib1g-dev git libopenjp2-7-dev libfreetype6-dev \
+liblcms2-dev libwebp-dev libnetcdff-dev gfortran \
+libmpich-dev libcusparselt0-dev-cuda-12 libcudss0-dev-cuda-12 \
+libbz2-1.0 libffi8 libgdbm6 libgdbm-compat4 liblzma5 libzstd1 \
+libtinfo6 libreadline8 libsqlite3-0 graphviz \
+zlib1g tk libuuid1  git libopenjp2-7-dev libopenjp2-7 liblcms2-2 libwebpmux3 libwebpdemux2 libwebp7 \
+libnetcdff7 gfortran libgomp1 libcusparselt0-cuda-12 libcudss0-cuda-12
 
 # Install Python packages
 RUN pip3 install --upgrade pip && \
     pip3 install Cython==3.1.6 meson-python patchelf pythran ninja pybind11 \
     build pyyaml typing-extensions wheel astunparse "setuptools<80.0.0" requests cmake
 
-# Create build script instead of using shell functions
-RUN echo '#!/bin/bash
-set -e
+COPY builder_numpy.sh /builder_numpy.sh
+COPY builder_scipy.sh /builder_scipy.sh
+COPY builder_torch.sh /builder_torch.sh
 
-# Install xtl
-echo "Installing xtl..."
-git clone --branch 0.8.1 --single-branch --recursive https://github.com/xtensor-stack/xtl.git
-cd xtl
-cmake -DCMAKE_INSTALL_PREFIX=/usr .
-make -j$(nproc)
-make install
-cd ..
-rm -rf xtl
-
-# Install xsimd
-echo "Installing xsimd..."
-git clone --branch 13.2.0 --single-branch --recursive https://github.com/xtensor-stack/xsimd.git
-cd xsimd
-cmake -DCMAKE_INSTALL_PREFIX=/usr .
-make -j$(nproc)
-make install
-cd ..
-rm -rf xsimd
-
-# Build numpy
-echo "Building numpy..."
-export NPY_BLAS_ORDER=openblas
-export NPY_USE_BLAS_ILP64=1
-git clone --branch v2.3.5 --single-branch --recursive https://github.com/numpy/numpy.git
-cd numpy
-git submodule update --init
-python3 -m build --no-isolation --wheel
-pip3 install dist/*.whl
-mv dist/numpy-*.whl /
-cd ..
-rm -rf numpy
-
-# Build scipy
-echo "Building scipy..."
-git clone --branch v1.16.3 --single-branch --recursive https://github.com/scipy/scipy.git
-cd scipy
-git submodule update --init
-python3 -m build -Csetup-args=-Dblas=openblas -Csetup-args=-Dlapack=openblas --no-isolation --wheel --skip-dependency-check
-pip3 install dist/*.whl
-mv dist/scipy-1.16*.whl /
-cd ..
-rm -rf scipy
-
-# Build PyTorch
-echo "Building PyTorch..."
-git clone --branch v2.9.1 --single-branch --recursive https://github.com/pytorch/pytorch.git
-cd pytorch
-git submodule sync
-git submodule update --init --recursive
-python3 -m build --no-isolation --wheel
-pip3 install dist/*.whl
-mv dist/torch-2.9*.whl /
-cd ..
-rm -rf pytorch
-
-echo "Build completed successfully"
-' > /tmp/build_script.sh && \
-    chmod +x /tmp/build_script.sh && \
-    /tmp/build_script.sh && \
-    rm /tmp/build_script.sh
+RUN bash /builder_numpy.sh
+RUN bash /builder_scipy.sh
+RUN bash /builder_torch.sh
 
 # Copy wheels to output directory
 RUN mkdir -p /output && \

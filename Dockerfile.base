@@ -25,7 +25,7 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Build Python
-RUN echo '#!/bin/bash\npython_build_command() {\n  git clone --branch v3.13.9 --single-branch --depth 1 https://github.com/python/cpython.git;\n  cd cpython;\n  ./configure --enable-shared LDFLAGS="-Wl,-rpath /usr/local/lib" --enable-optimizations --with-lto;\n  make -j;\n  make install;\n  cd ..;\n  rm -rf cpython;\n  python3 -m ensurepip --upgrade;\n  pip3 install --upgrade pip;\n}\npython_build_command' > /tmp/build_python.sh && \
+RUN echo '#!/bin/bash\npython_build_command() {\n  git clone --branch v3.13.11 --single-branch --depth 1 https://github.com/python/cpython.git;\n  cd cpython;\n  ./configure --enable-shared LDFLAGS="-Wl,-rpath /usr/local/lib" --enable-optimizations --with-lto;\n  make -j;\n  make install;\n  cd ..;\n  rm -rf cpython;\n  python3 -m ensurepip --upgrade;\n  pip3 install --upgrade pip;\n}\npython_build_command' > /tmp/build_python.sh && \
     chmod +x /tmp/build_python.sh && \
     bash /tmp/build_python.sh && \
     rm /tmp/build_python.sh
